@@ -96,13 +96,14 @@ def parse_simplex_table_xml(file_name):
         b_vector = list(map(Fraction, b_vector.text.split()))
         parametric_vector = list(map(Fraction, parametric_vector.text.split()))
         dimensionality = list(map(int, dimensionality.text.split()))
+        dimensionality = {'number of constraints': dimensionality[0], 'number of variables': dimensionality[1]}
         task_type = task_type.text
-        basis_indexes = [i for i in range(dimensionality[1] + 1, dimensionality[0] + dimensionality[1] + 1)]
+        basis_indexes = [i for i in range(dimensionality['number of variables'] + 1, dimensionality['number of constraints'] + dimensionality['number of variables'] + 1)]
         basis_goal_function = [Fraction("0/1") for _ in range(len(basis_indexes))]
         simplex_table.append(basis_indexes)
         simplex_table.append(basis_goal_function)
         simplex_table.append(b_vector)
-        for i in range(0, dimensionality[1]):
+        for i in range(0, dimensionality['number of variables']):
             A_vector = initial_data.find('X{}'.format(i + 1))
             if A_vector is not None:
                 simplex_table.append(list(map(Fraction, A_vector.text.split())))
@@ -223,9 +224,10 @@ def b_vector_variation(*simplex_problem, initial_conditions, initial_param_value
     solution_vector = [0] * len(goal_function_vector)
     for i in range(0, len(simplex_table[0])):
         solution_vector[simplex_table[0][i] - 1] = simplex_table[2][i]
-    solution_vector = solution_vector[0:dimensionality[1]]
-    parametric_optimal_resolution = [optimal_resolution, np.dot(solution_vector,
-                                                                parametric_vector[0:dimensionality[1]])]
+    solution_vector = solution_vector[0:dimensionality['number of variables']]
+    parametric_optimal_resolution = [optimal_resolution,
+                                     np.dot(solution_vector,
+                                            parametric_vector[0:dimensionality['number of variables']])]
     print_parametric_solution(argument_range,
                               basis_indexes=simplex_table[0],
                               solution_vector=solution_vector,
@@ -286,9 +288,9 @@ def objective_function_variation(*simplex_problem, initial_param_value=0, output
     solution_vector = [0] * len(goal_function_vector)
     for i in range(0, len(simplex_table[0])):
         solution_vector[simplex_table[0][i] - 1] = simplex_table[2][i]
-    solution_vector = solution_vector[0:dimensionality[1]]
+    solution_vector = solution_vector[0:dimensionality['number of variables']]
     parametric_optimal_resolution = [optimal_resolution, np.dot(solution_vector,
-                                                                parametric_vector[0:dimensionality[1]])]
+                                                                parametric_vector[0:dimensionality['number of variables']])]
     print_parametric_solution(argument_range,
                               basis_indexes=simplex_table[0],
                               solution_vector=solution_vector,
