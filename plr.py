@@ -51,8 +51,8 @@ def print_simplex_table(simplex_table, simplexes):
     print()
 
 
-def print_parametric_solution(argument_range, basis_indexes, solution_vector,
-                              optimal_resolution, file_name):
+def print_parametric_solution(argument_range, basis_indexes=None, solution_vector=None,
+                              optimal_resolution=None, file_name=None):
     with open(file_name, 'a') as f:
         f.write("Argument range: ({},{})\n".format(argument_range[0], argument_range[1]))
         if basis_indexes is None:
@@ -119,7 +119,9 @@ def parse_simplex_table_xml(file_name):
     except FileNotFoundError as e:
         print(e)
         sys.exit(1)
-    return [task_type, goal_func_vector, parametric_vector, simplex_table, simplexes, b_vector]
+    return {'task_type': task_type, 'goal_function_vector': goal_func_vector,
+            'parametric_vector': parametric_vector, 'simplex_table': simplex_table,
+            'simplexes': simplexes, 'b_vector': b_vector}
 
 
 def simplex_method(*simplex_problem):
@@ -254,14 +256,6 @@ def b_vector_variation(*simplex_problem, initial_conditions, initial_param_value
 
 
 def objective_function_variation(*simplex_problem, initial_param_value=0, output):
-    """
-
-    :param output:
-    :param initial_param_value:
-    :param simplex_problem:
-    :return:
-    non_basis_variable_indexes -- indexes of variables that are not in basis
-    """
     goal_function_vector, parametric_vector, simplex_table, simplexes = simplex_problem
     solution_existence = simplex_method(goal_function_vector, simplex_table, simplexes)
     if solution_existence == -1:
@@ -302,8 +296,11 @@ def objective_function_variation(*simplex_problem, initial_param_value=0, output
     for i in range(0, len(simplex_table[0])):
         solution_vector[simplex_table[0][i] - 1] = simplex_table[2][i]
     solution_vector = solution_vector[0:len(simplex_table[0])]
-    print_parametric_solution(argument_range, simplex_table[0], solution_vector,
-                              np.dot(simplex_table[1], simplex_table[2]), output)
+    print_parametric_solution(argument_range,
+                              basis_indexes=simplex_table[0],
+                              solution_vector=solution_vector,
+                              optimal_resolution=np.dot(simplex_table[1], simplex_table[2]),
+                              file_name=output)
     if right_border != 1000:
         right_border += initial_param_value
         objective_function_variation(goal_function_vector, parametric_vector, simplex_table, simplexes,
@@ -313,27 +310,24 @@ def objective_function_variation(*simplex_problem, initial_param_value=0, output
 def parametric_programming(input_file_name, output_file_name):
     try:
         parse_data = parse_simplex_table_xml(input_file_name)
-        task_type = parse_data[0]
+        task_type = parse_data['task_type']
         if task_type not in ["c variation", "b variation"]:
             raise ValueError("Wrong task type")
         elif task_type == "c variation":
-            # print_simplex_table(parse_data[2], parse_data[3])
-            # goal_function_vector, parametric_vector, simplex_table, simplexes
-            # return [goal_func_vector, parametric_vector, simplex_table, simplexes, b_vector]
-            objective_function_variation(parse_data[1],
-                                         parse_data[2],
-                                         parse_data[3],
-                                         parse_data[4],
+            objective_function_variation(parse_data['goal_function_vector'],
+                                         parse_data['parametric_vector'],
+                                         parse_data['simplex_table'],
+                                         parse_data['simplexes'],
                                          initial_param_value=0,
                                          output=output_file_name)
         else:
-            initial_cond = copy.deepcopy(parse_data[3][3:len(parse_data[3])])
-            initial_b_vector = copy.deepcopy(parse_data[5])
-            simplex_method(parse_data[1], parse_data[3], parse_data[4])
-            b_vector_variation(parse_data[1],
-                               parse_data[2],
-                               parse_data[3],
-                               parse_data[4],
+            initial_cond = copy.deepcopy(parse_data['simplex_table'][3:len(parse_data['simplex_table'])])
+            initial_b_vector = copy.deepcopy(parse_data['b_vector'])
+            simplex_method(parse_data['goal_function_vector'], parse_data['simplex_table'], parse_data['simplexes'])
+            b_vector_variation(parse_data['goal_func_vector'],
+                               parse_data['parametric_vector'],
+                               parse_data['simplex_table'],
+                               parse_data['simplexes'],
                                initial_b_vector,
                                initial_conditions=initial_cond,
                                initial_param_value=0,
