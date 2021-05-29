@@ -92,6 +92,7 @@ def parse_simplex_table_xml(file_name):
         b_vector = list(map(Fraction, b_vector.text.split()))
         parametric_vector = list(map(Fraction, parametric_vector.text.split()))
         dimensionality = list(map(int, dimensionality.text.split()))
+        task_type = task_type.text
         basis_indexes = [i for i in range(dimensionality[1] + 1, dimensionality[0] + dimensionality[1] + 1)]
         basis_goal_function = [Fraction("0/1") for _ in range(len(basis_indexes))]
         simplex_table.append(basis_indexes)
@@ -309,9 +310,10 @@ def objective_function_variation(*simplex_problem, initial_param_value=0, output
                                      initial_param_value=right_border, output=output)
 
 
-def parametric_programming(task_type, input_file_name, output_file_name):
+def parametric_programming(input_file_name, output_file_name):
     try:
         parse_data = parse_simplex_table_xml(input_file_name)
+        task_type = parse_data[0]
         if task_type not in ["c variation", "b variation"]:
             raise ValueError("Wrong task type")
         elif task_type == "c variation":
