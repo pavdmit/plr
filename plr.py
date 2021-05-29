@@ -31,46 +31,49 @@ def print_simplex_table(simplex_table, simplexes, logger_file='log_simplex_table
     with open(logger_file, 'a') as f:
         f.write('Basis indexes: ')
         for index in simplex_table[0]:
-            f.write(str(index)+' ')
+            f.write(str(index) + ' ')
         f.write('\n')
         f.write('C basis: ')
         for index in simplex_table[1]:
-            f.write(str(index)+' ')
+            f.write(str(index) + ' ')
         f.write('\n')
         f.write('Optimal resolution vector: ')
         for component in simplex_table[2]:
-            f.write(str(component)+' ')
+            f.write(str(component) + ' ')
         f.write('\n')
         for i in range(3, len(simplex_table)):
-            f.write('A{}'.format(i - 2)+': ')
+            f.write('A{}'.format(i - 2) + ': ')
             for component in simplex_table[i]:
-                f.write(str(component)+' ')
+                f.write(str(component) + ' ')
             f.write('\n')
-        f.write('Simplexes: ',)
+        f.write('Simplexes: ', )
         for component in simplexes:
-            f.write(str(component)+' ')
+            f.write(str(component) + ' ')
         f.write('\n         \n')
 
 
 def print_parametric_solution(argument_range, basis_indexes=None, solution_vector=None,
                               optimal_resolution=None, file_name=None):
     with open(file_name, 'a') as f:
-        f.write("Argument range: ({},{})\n".format(argument_range[0], argument_range[1]))
+        f.write('Argument range: ({},{})\n'.format(argument_range[0], argument_range[1]))
         if basis_indexes is None:
-            f.write("No solution\n")
+            f.write('No solution\n')
             return
-        f.write("Basis variables: ")
+        f.write('Basis variables: ')
         for i in range(0, len(basis_indexes)):
-            f.write("X{} ".format(basis_indexes[i]))
-        f.write("\n")
-        f.write("Solution vector: (")
+            f.write('X{} '.format(basis_indexes[i]))
+        f.write('\n')
+        f.write('Solution vector: (')
         for i in range(0, len(solution_vector)):
             f.write(str(solution_vector[i]))
             if i != len(solution_vector) - 1:
-                f.write(" ")
-        f.write(")\n")
-        f.write("Optimal resolution: {}\n".format(optimal_resolution))
-        f.write("\n\n")
+                f.write(' ')
+        f.write(')\n')
+        f.write('Optimal resolution: ' + str(optimal_resolution[0]) + ' ')
+        if float(optimal_resolution[1]) > 0:
+            f.write('+ ')
+        f.write(str(optimal_resolution[1]))
+        f.write('*t\n\n')
 
 
 def parse_simplex_table_xml(file_name):
@@ -88,7 +91,7 @@ def parse_simplex_table_xml(file_name):
         parametric_vector = initial_data.find('ParametricVector')
         b_vector = initial_data.find('BVector')
         if dimensionality or goal_func_vector or parametric_vector or b_vector or task_type is None:
-            raise AttributeError("Wrong file structure")
+            raise AttributeError('Wrong file structure')
         goal_func_vector = list(map(Fraction, goal_func_vector.text.split()))
         b_vector = list(map(Fraction, b_vector.text.split()))
         parametric_vector = list(map(Fraction, parametric_vector.text.split()))
@@ -104,7 +107,7 @@ def parse_simplex_table_xml(file_name):
             if A_vector is not None:
                 simplex_table.append(list(map(Fraction, A_vector.text.split())))
             else:
-                raise AttributeError("Wrong file structure")
+                raise AttributeError('Wrong file structure')
         identity_matrix = np.eye(len(basis_indexes))
         for i in range(len(basis_indexes)):
             column = map(Fraction, identity_matrix[i])
@@ -122,7 +125,7 @@ def parse_simplex_table_xml(file_name):
         sys.exit(1)
     return {'task_type': task_type, 'goal_function_vector': goal_func_vector,
             'parametric_vector': parametric_vector, 'simplex_table': simplex_table,
-            'simplexes': simplexes, 'b_vector': b_vector}
+            'simplexes': simplexes, 'b_vector': b_vector, 'dimensionality': dimensionality}
 
 
 def simplex_method(*simplex_problem):
@@ -156,7 +159,6 @@ def simplex_method(*simplex_problem):
     simplexes.clear()
     for i in range(3, len(simplex_table)):
         simplexes.append(np.dot(simplex_table[1], simplex_table[i]) - goal_function_vector[i - 3])
-    # print_simplex_table(simplex_table, simplexes)
     if min(simplexes) < 0:
         simplex_method(*simplex_problem)
 
@@ -164,20 +166,16 @@ def simplex_method(*simplex_problem):
 def dual_simplex_method(*simplex_problem):
     goal_function_vector, simplex_table, simplexes = simplex_problem
     old_basis_index = simplex_table[2].index((min(simplex_table[2]))) + 1
-    # print(old_basis_index)
     min_ratio = 1000
     new_basis_position = -1
     for i in range(3, len(simplex_table)):
         if simplex_table[i][old_basis_index - 1] < 0 and abs(
                 simplexes[i - 3] / simplex_table[i][old_basis_index - 1]) < min_ratio:
             min_ratio = abs(simplexes[i - 3] / simplex_table[i][old_basis_index - 1])
-            # print("min ratio = ", min_ratio)
             new_basis_position = i
     if new_basis_position == -1:
         return -1
-    # print(new_basis_position)
     norm = simplex_table[new_basis_position][old_basis_index - 1]
-    # print("norm = ", norm)
     for j in range(2, len(simplex_table)):
         simplex_table[j][old_basis_index - 1] = simplex_table[j][old_basis_index - 1] / norm
     for i in range(0, len(simplex_table[0])):
@@ -194,26 +192,18 @@ def dual_simplex_method(*simplex_problem):
         dual_simplex_method(*simplex_problem)
 
 
-def b_vector_variation(*simplex_problem, initial_conditions, initial_param_value=0, output):
-    # argument_range, basis_indexes, solution_vector,optimal_resolution, file_name
+def b_vector_variation(*simplex_problem, initial_conditions, initial_param_value=0, output, dimensionality):
     goal_function_vector, parametric_vector, simplex_table, simplexes, b_vector = simplex_problem
-    # dual_simplex_method(goal_function_vector, simplex_table, simplexes)
-    # print_simplex_table(simplex_table, simplexes)
     left_border = -10000
     right_border = 10000
-    # print("initial param value = ", initial_param_value)
     print_simplex_table(simplex_table, simplexes)
     basis_matrix = []
+    optimal_resolution = np.dot(simplex_table[1], simplex_table[2])
     for i in range(0, len(simplex_table) - 3):
         if i + 1 in simplex_table[0]:
             basis_matrix.append(initial_conditions[i])
-    print("basis matrix = ")
-    print(basis_matrix)
     reversed_basis_matrix = reverse_matrix(basis_matrix)
-    print("reversed basis matrix = ")
-    print(reversed_basis_matrix)
     parametric_matrix = np.dot(reversed_basis_matrix, parametric_vector[0:len(simplex_table[3])])
-    # print(parametric_matrix)
     for i in range(0, len(parametric_matrix)):
         if parametric_matrix[i] > 0:
             if -simplex_table[2][i] / parametric_matrix[i] > left_border:
@@ -221,7 +211,6 @@ def b_vector_variation(*simplex_problem, initial_conditions, initial_param_value
         elif parametric_matrix[i] < 0:
             if -simplex_table[2][i] / parametric_matrix[i] < right_border:
                 right_border = -simplex_table[2][i] / parametric_matrix[i]
-    print("left border = ", left_border, "right border = ", right_border)
     argument_range = []
     if left_border == -1000:
         argument_range.append('negative infinity')
@@ -231,37 +220,38 @@ def b_vector_variation(*simplex_problem, initial_conditions, initial_param_value
         argument_range.append('positive infinity')
     else:
         argument_range.append(right_border + initial_param_value)
-    # solution vector creation
     solution_vector = [0] * len(goal_function_vector)
     for i in range(0, len(simplex_table[0])):
         solution_vector[simplex_table[0][i] - 1] = simplex_table[2][i]
-    solution_vector = solution_vector[0:len(simplex_table[0])]
-    print_parametric_solution(argument_range, simplex_table[0], solution_vector,
-                              np.dot(simplex_table[1], simplex_table[2]), output)
+    solution_vector = solution_vector[0:dimensionality[1]]
+    parametric_optimal_resolution = [optimal_resolution, np.dot(solution_vector,
+                                                                parametric_vector[0:dimensionality[1]])]
+    print_parametric_solution(argument_range,
+                              basis_indexes=simplex_table[0],
+                              solution_vector=solution_vector,
+                              optimal_resolution=parametric_optimal_resolution,
+                              file_name=output)
     if right_border != 1000:
-        # print("b vector = ", b_vector)
-        # print(parametric_vector[0:len(simplex_table[3])])
         b_vector = b_vector + right_border * np.array(parametric_vector[0:len(simplex_table[3])])
-        # print("new b vector = ", b_vector)
         simplex_table[2] = np.dot(reversed_basis_matrix, b_vector).tolist()
-        # print_simplex_table(simplex_table, simplexes)
         solution_existence = dual_simplex_method(goal_function_vector, simplex_table, simplexes)
         print_simplex_table(simplex_table, simplexes)
         right_border += initial_param_value
         if solution_existence != -1:
             b_vector_variation(goal_function_vector, parametric_vector, simplex_table, simplexes, b_vector,
                                initial_conditions=initial_conditions, initial_param_value=right_border,
-                               output=output)
-        '''else:
-            print_parametric_solution([initial_param_value, "positive infinity"],)'''
+                               output=output, dimensionality=dimensionality)
+        else:
+            print_parametric_solution([right_border, 'positive infinity'], file_name=output)
 
 
-def objective_function_variation(*simplex_problem, initial_param_value=0, output):
+def objective_function_variation(*simplex_problem, initial_param_value=0, output, dimensionality):
     goal_function_vector, parametric_vector, simplex_table, simplexes = simplex_problem
     solution_existence = simplex_method(goal_function_vector, simplex_table, simplexes)
     print_simplex_table(simplex_table, simplexes)
+    optimal_resolution = np.dot(simplex_table[1], simplex_table[2])
     if solution_existence == -1:
-        print_parametric_solution([initial_param_value, "positive infinity"])
+        print_parametric_solution([initial_param_value, 'positive infinity'], file_name=output)
         return
     non_basis_variable_indexes = [i for i in range(1, len(simplex_table) - 2) if i not in simplex_table[0]]
     left_border = -1000
@@ -293,47 +283,50 @@ def objective_function_variation(*simplex_problem, initial_param_value=0, output
         argument_range.append('positive infinity')
     else:
         argument_range.append(right_border + initial_param_value)
-    # solution vector creation
     solution_vector = [0] * len(goal_function_vector)
     for i in range(0, len(simplex_table[0])):
         solution_vector[simplex_table[0][i] - 1] = simplex_table[2][i]
-    solution_vector = solution_vector[0:len(simplex_table[0])]
+    solution_vector = solution_vector[0:dimensionality[1]]
+    parametric_optimal_resolution = [optimal_resolution, np.dot(solution_vector,
+                                                                parametric_vector[0:dimensionality[1]])]
     print_parametric_solution(argument_range,
                               basis_indexes=simplex_table[0],
                               solution_vector=solution_vector,
-                              optimal_resolution=np.dot(simplex_table[1], simplex_table[2]),
+                              optimal_resolution=parametric_optimal_resolution,
                               file_name=output)
     if right_border != 1000:
         right_border += initial_param_value
         objective_function_variation(goal_function_vector, parametric_vector, simplex_table, simplexes,
-                                     initial_param_value=right_border, output=output)
+                                     initial_param_value=right_border, output=output, dimensionality=dimensionality)
 
 
 def parametric_programming(input_file_name, output_file_name):
     try:
         parse_data = parse_simplex_table_xml(input_file_name)
         task_type = parse_data['task_type']
-        if task_type not in ["c variation", "b variation"]:
-            raise ValueError("Wrong task type")
-        elif task_type == "c variation":
+        if task_type not in ['c variation', 'b variation']:
+            raise ValueError('Wrong task type')
+        elif task_type == 'c variation':
             objective_function_variation(parse_data['goal_function_vector'],
                                          parse_data['parametric_vector'],
                                          parse_data['simplex_table'],
                                          parse_data['simplexes'],
                                          initial_param_value=0,
-                                         output=output_file_name)
+                                         output=output_file_name,
+                                         dimensionality=parse_data['dimensionality'])
         else:
             initial_cond = copy.deepcopy(parse_data['simplex_table'][3:len(parse_data['simplex_table'])])
             initial_b_vector = copy.deepcopy(parse_data['b_vector'])
             simplex_method(parse_data['goal_function_vector'], parse_data['simplex_table'], parse_data['simplexes'])
-            b_vector_variation(parse_data['goal_func_vector'],
+            b_vector_variation(parse_data['goal_function_vector'],
                                parse_data['parametric_vector'],
                                parse_data['simplex_table'],
                                parse_data['simplexes'],
                                initial_b_vector,
                                initial_conditions=initial_cond,
                                initial_param_value=0,
-                               output=output_file_name)
+                               output=output_file_name,
+                               dimensionality=parse_data['dimensionality'])
     except ValueError as e:
         print(e)
         return
