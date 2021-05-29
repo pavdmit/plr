@@ -27,28 +27,29 @@ def reverse_matrix(fraction_matrix):
     return np.transpose(reversed_fraction_matrix)
 
 
-def print_simplex_table(simplex_table, simplexes):
-    print("Basis indexes:", end=' ')
-    for index in simplex_table[0]:
-        print(index, end=' ')
-    print()
-    print("C basis:", end=' ')
-    for index in simplex_table[1]:
-        print(index, end=' ')
-    print()
-    print("Optimal resolution vector:", end=' ')
-    for component in simplex_table[2]:
-        print(component, end=' ')
-    print()
-    for i in range(3, len(simplex_table)):
-        print("A{}".format(i - 2), ":", end=' ')
-        for component in simplex_table[i]:
-            print(component, end=' ')
-        print()
-    print("Simplexes:", end=' ')
-    for component in simplexes:
-        print(component, end=' ')
-    print()
+def print_simplex_table(simplex_table, simplexes, logger_file='log_simplex_table.txt'):
+    with open(logger_file, 'a') as f:
+        f.write('Basis indexes: ')
+        for index in simplex_table[0]:
+            f.write(str(index)+' ')
+        f.write('\n')
+        f.write('C basis: ')
+        for index in simplex_table[1]:
+            f.write(str(index)+' ')
+        f.write('\n')
+        f.write('Optimal resolution vector: ')
+        for component in simplex_table[2]:
+            f.write(str(component)+' ')
+        f.write('\n')
+        for i in range(3, len(simplex_table)):
+            f.write('A{}'.format(i - 2)+': ')
+            for component in simplex_table[i]:
+                f.write(str(component)+' ')
+            f.write('\n')
+        f.write('Simplexes: ',)
+        for component in simplexes:
+            f.write(str(component)+' ')
+        f.write('\n         \n')
 
 
 def print_parametric_solution(argument_range, basis_indexes=None, solution_vector=None,
@@ -258,6 +259,7 @@ def b_vector_variation(*simplex_problem, initial_conditions, initial_param_value
 def objective_function_variation(*simplex_problem, initial_param_value=0, output):
     goal_function_vector, parametric_vector, simplex_table, simplexes = simplex_problem
     solution_existence = simplex_method(goal_function_vector, simplex_table, simplexes)
+    print_simplex_table(simplex_table, simplexes)
     if solution_existence == -1:
         print_parametric_solution([initial_param_value, "positive infinity"])
         return
