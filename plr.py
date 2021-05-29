@@ -81,30 +81,28 @@ def parse_simplex_table_xml(file_name):
             raise FileNotFoundError("File doesn't exist")
         tree = ET.parse(file_name)
         initial_data = tree.getroot()
+        task_type = initial_data.find('TaskType')
         dimensionality = initial_data.find('Dimensionality')
         goal_func_vector = initial_data.find('GoalFunctionVector')
         parametric_vector = initial_data.find('ParametricVector')
         b_vector = initial_data.find('BVector')
-        if dimensionality or goal_func_vector or parametric_vector or b_vector is None:
+        if dimensionality or goal_func_vector or parametric_vector or b_vector or task_type is None:
             raise AttributeError("Wrong file structure")
         goal_func_vector = list(map(Fraction, goal_func_vector.text.split()))
         b_vector = list(map(Fraction, b_vector.text.split()))
         parametric_vector = list(map(Fraction, parametric_vector.text.split()))
-        decomposition_vectors = []
-        dimensionality = int(dimensionality.text)
-        for i in range(0, dimensionality):
-            A_vector = initial_data.find('X{}'.format(i + 1))
-            if A_vector is not None:
-                decomposition_vectors.append(list(map(Fraction, A_vector.text.split())))
-            else:
-                raise AttributeError("Wrong file structure")
-        basis_indexes = [i for i in range(dimensionality + 1, len(decomposition_vectors[0]) + dimensionality + 1)]
+        dimensionality = list(map(int, dimensionality.text.split()))
+        basis_indexes = [i for i in range(dimensionality[1] + 1, dimensionality[0] + dimensionality[1] + 1)]
         basis_goal_function = [Fraction("0/1") for _ in range(len(basis_indexes))]
         simplex_table.append(basis_indexes)
         simplex_table.append(basis_goal_function)
         simplex_table.append(b_vector)
-        for i in range(0, len(decomposition_vectors)):
-            simplex_table.append(decomposition_vectors[i])
+        for i in range(0, dimensionality[1]):
+            A_vector = initial_data.find('X{}'.format(i + 1))
+            if A_vector is not None:
+                simplex_table.append(list(map(Fraction, A_vector.text.split())))
+            else:
+                raise AttributeError("Wrong file structure")
         identity_matrix = np.eye(len(basis_indexes))
         for i in range(len(basis_indexes)):
             column = map(Fraction, identity_matrix[i])
@@ -120,7 +118,7 @@ def parse_simplex_table_xml(file_name):
     except FileNotFoundError as e:
         print(e)
         sys.exit(1)
-    return [goal_func_vector, parametric_vector, simplex_table, simplexes, b_vector]
+    return [task_type, goal_func_vector, parametric_vector, simplex_table, simplexes, b_vector]
 
 
 def simplex_method(*simplex_problem):
@@ -320,20 +318,20 @@ def parametric_programming(task_type, input_file_name, output_file_name):
             # print_simplex_table(parse_data[2], parse_data[3])
             # goal_function_vector, parametric_vector, simplex_table, simplexes
             # return [goal_func_vector, parametric_vector, simplex_table, simplexes, b_vector]
-            objective_function_variation(parse_data[0],
-                                         parse_data[1],
+            objective_function_variation(parse_data[1],
                                          parse_data[2],
                                          parse_data[3],
+                                         parse_data[4],
                                          initial_param_value=0,
                                          output=output_file_name)
         else:
-            initial_cond = copy.deepcopy(parse_data[2][3:len(parse_data[2])])
-            initial_b_vector = copy.deepcopy(parse_data[4])
-            simplex_method(parse_data[0], parse_data[2], parse_data[3])
-            b_vector_variation(parse_data[0],
-                               parse_data[1],
+            initial_cond = copy.deepcopy(parse_data[3][3:len(parse_data[3])])
+            initial_b_vector = copy.deepcopy(parse_data[5])
+            simplex_method(parse_data[1], parse_data[3], parse_data[4])
+            b_vector_variation(parse_data[1],
                                parse_data[2],
                                parse_data[3],
+                               parse_data[4],
                                initial_b_vector,
                                initial_conditions=initial_cond,
                                initial_param_value=0,

@@ -1,6 +1,7 @@
-﻿<?xml version="0.9" encoding="UTF-8" ?>
+<?xml version="1.0" encoding="UTF-8" ?>
 <InitialData>
-	<Dimensionality>2</Dimensionality>
+	<TaskType>c variation</TaskType>
+	<Dimensionality>2 2</Dimensionality>
     <GoalFunctionVector>1/1 2/1</GoalFunctionVector>
     <ParametricVector>-3 -4</ParametricVector>
     <BVector>5 5</BVector>
