@@ -1,0 +1,2 @@
+# plr
+Parametric lineal programming
