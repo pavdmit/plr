@@ -57,7 +57,7 @@ def print_parametric_solution(argument_range, basis_indexes=None, solution_vecto
     with open(file_name, 'a') as f:
         f.write('Argument range: ({},{})\n'.format(argument_range[0], argument_range[1]))
         if basis_indexes is None:
-            f.write('No solution\n')
+            f.write('No solution\n\n')
             return
         f.write('Basis variables: ')
         for i in range(0, len(basis_indexes)):
@@ -98,7 +98,9 @@ def parse_simplex_table_xml(file_name):
         dimensionality = list(map(int, dimensionality.text.split()))
         dimensionality = {'number of constraints': dimensionality[0], 'number of variables': dimensionality[1]}
         task_type = task_type.text
-        basis_indexes = [i for i in range(dimensionality['number of variables'] + 1, dimensionality['number of constraints'] + dimensionality['number of variables'] + 1)]
+        basis_indexes = [i for i in range(dimensionality['number of variables'] + 1,
+                                          dimensionality['number of constraints'] + dimensionality[
+                                              'number of variables'] + 1)]
         basis_goal_function = [Fraction("0/1") for _ in range(len(basis_indexes))]
         simplex_table.append(basis_indexes)
         simplex_table.append(basis_goal_function)
@@ -193,7 +195,8 @@ def dual_simplex_method(*simplex_problem):
         dual_simplex_method(*simplex_problem)
 
 
-def b_vector_variation(*simplex_problem, initial_conditions, initial_param_value=0, output, dimensionality):
+def b_vector_variation(*simplex_problem, initial_conditions, initial_param_value=0, output, dimensionality,
+                       side='center'):
     goal_function_vector, parametric_vector, simplex_table, simplexes, b_vector = simplex_problem
     left_border = -10000
     right_border = 10000
@@ -225,15 +228,15 @@ def b_vector_variation(*simplex_problem, initial_conditions, initial_param_value
     for i in range(0, len(simplex_table[0])):
         solution_vector[simplex_table[0][i] - 1] = simplex_table[2][i]
     solution_vector = solution_vector[0:dimensionality['number of variables']]
-    parametric_optimal_resolution = [optimal_resolution,
-                                     np.dot(solution_vector,
-                                            parametric_vector[0:dimensionality['number of variables']])]
+    coefficient = np.dot(simplex_table[1], reversed_basis_matrix)
+    coefficient = np.dot(coefficient, parametric_vector[0:dimensionality['number of constraints']])
+    parametric_optimal_resolution = [optimal_resolution, coefficient]
     print_parametric_solution(argument_range,
                               basis_indexes=simplex_table[0],
                               solution_vector=solution_vector,
                               optimal_resolution=parametric_optimal_resolution,
                               file_name=output)
-    if right_border != 1000:
+    if right_border != 1000 and side != 'left':
         b_vector = b_vector + right_border * np.array(parametric_vector[0:len(simplex_table[3])])
         simplex_table[2] = np.dot(reversed_basis_matrix, b_vector).tolist()
         solution_existence = dual_simplex_method(goal_function_vector, simplex_table, simplexes)
@@ -242,12 +245,25 @@ def b_vector_variation(*simplex_problem, initial_conditions, initial_param_value
         if solution_existence != -1:
             b_vector_variation(goal_function_vector, parametric_vector, simplex_table, simplexes, b_vector,
                                initial_conditions=initial_conditions, initial_param_value=right_border,
-                               output=output, dimensionality=dimensionality)
+                               output=output, dimensionality=dimensionality, side='right')
         else:
             print_parametric_solution([right_border, 'positive infinity'], file_name=output)
 
+    if left_border != -1000 and side != 'right':
+        b_vector = b_vector + left_border * np.array(parametric_vector[0:len(simplex_table[3])])
+        simplex_table[2] = np.dot(reversed_basis_matrix, b_vector).tolist()
+        solution_existence = dual_simplex_method(goal_function_vector, simplex_table, simplexes)
+        print_simplex_table(simplex_table, simplexes)
+        left_border += initial_param_value
+        if solution_existence != -1:
+            b_vector_variation(goal_function_vector, parametric_vector, simplex_table, simplexes, b_vector,
+                               initial_conditions=initial_conditions, initial_param_value=left_border,
+                               output=output, dimensionality=dimensionality, side='left')
+        else:
+            print_parametric_solution(['negative infinity', left_border], file_name=output)
 
-def objective_function_variation(*simplex_problem, initial_param_value=0, output, dimensionality):
+
+def objective_function_variation(*simplex_problem, initial_param_value=0, output, dimensionality,side='center'):
     goal_function_vector, parametric_vector, simplex_table, simplexes = simplex_problem
     solution_existence = simplex_method(goal_function_vector, simplex_table, simplexes)
     print_simplex_table(simplex_table, simplexes)
@@ -277,7 +293,7 @@ def objective_function_variation(*simplex_problem, initial_param_value=0, output
     for i in range(3, len(simplex_table)):
         simplexes.append(np.dot(simplex_table[1], simplex_table[i]) - goal_function_vector[i - 3])
     argument_range = []
-    if left_border == -1000:
+    if left_border == -1000 and side:
         argument_range.append('negative infinity')
     else:
         argument_range.append(left_border + initial_param_value)
@@ -290,16 +306,26 @@ def objective_function_variation(*simplex_problem, initial_param_value=0, output
         solution_vector[simplex_table[0][i] - 1] = simplex_table[2][i]
     solution_vector = solution_vector[0:dimensionality['number of variables']]
     parametric_optimal_resolution = [optimal_resolution, np.dot(solution_vector,
-                                                                parametric_vector[0:dimensionality['number of variables']])]
+                                                                parametric_vector[
+                                                                0:dimensionality['number of variables']])]
     print_parametric_solution(argument_range,
                               basis_indexes=simplex_table[0],
                               solution_vector=solution_vector,
                               optimal_resolution=parametric_optimal_resolution,
                               file_name=output)
-    if right_border != 1000:
+    if right_border != 1000 and side != 'left':
         right_border += initial_param_value
         objective_function_variation(goal_function_vector, parametric_vector, simplex_table, simplexes,
-                                     initial_param_value=right_border, output=output, dimensionality=dimensionality)
+                                     initial_param_value=right_border, output=output,
+                                     dimensionality=dimensionality,
+                                     side='right')
+    if left_border != -1000 and side != 'right':
+        left_border += initial_param_value
+        objective_function_variation(goal_function_vector, parametric_vector, simplex_table, simplexes,
+                                     initial_param_value=left_border,
+                                     output=output,
+                                     dimensionality=dimensionality,
+                                     side='left')
 
 
 def parametric_programming(input_file_name, output_file_name):
