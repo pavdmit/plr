@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<InitialData>
+    <TaskType>b variation</TaskType>
+    <Dimensionality>2 4</Dimensionality>
+    <GoalFunctionVector>2/1 4/1 6/1 3/1</GoalFunctionVector>
+    <ParametricVector>2 -1</ParametricVector>
+    <BVector>12 10</BVector>
+    <X1>1 2</X1>
+    <X2>3 2</X2>
+    <X3>3 1</X3>
+    <X4>2 3</X4>
+</InitialData>
