@@ -1,0 +1,216 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>500</width>
+    <height>500</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>MainWindow</string>
+  </property>
+  <property name="styleSheet">
+   <string notr="true">background-color: rgb(255, 255, 255);</string>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <widget class="QLabel" name="label">
+    <property name="geometry">
+     <rect>
+      <x>100</x>
+      <y>50</y>
+      <width>300</width>
+      <height>51</height>
+     </rect>
+    </property>
+    <property name="minimumSize">
+     <size>
+      <width>300</width>
+      <height>0</height>
+     </size>
+    </property>
+    <property name="styleSheet">
+     <string notr="true">font: 22pt &quot;Andale Mono&quot;;
+color:rgb(43,59,78);</string>
+    </property>
+    <property name="text">
+     <string>Linear programming</string>
+    </property>
+    <property name="alignment">
+     <set>Qt::AlignCenter</set>
+    </property>
+   </widget>
+   <widget class="QWidget" name="verticalLayoutWidget">
+    <property name="geometry">
+     <rect>
+      <x>30</x>
+      <y>160</y>
+      <width>128</width>
+      <height>131</height>
+     </rect>
+    </property>
+    <layout class="QVBoxLayout" name="verticalLayout">
+     <item>
+      <widget class="QPushButton" name="input_file_btn">
+       <property name="minimumSize">
+        <size>
+         <width>0</width>
+         <height>26</height>
+        </size>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">QPushButton {
+	background-color: rgb(253, 128, 8);
+	color:rgb(243,247,254);
+	border: 0px solid;
+	border-radius: 12px;
+	font: 13pt &quot;Andale Mono&quot;;
+}
+
+QPushButton:hover {
+	background-color: rgb(254, 204, 102);
+	color: rgb(255, 255, 255);
+}</string>
+       </property>
+       <property name="text">
+        <string>Set input file</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="output_file_btn">
+       <property name="minimumSize">
+        <size>
+         <width>0</width>
+         <height>26</height>
+        </size>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">QPushButton {
+	background-color: rgb(253, 128, 8);
+	color:rgb(243,247,254);
+	border: 0px solid;
+	border-radius: 12px;
+	font: 13pt &quot;Andale Mono&quot;;
+}
+
+QPushButton:hover {
+	background-color: rgb(254, 204, 102);
+	color: rgb(255, 255, 255);
+}</string>
+       </property>
+       <property name="text">
+        <string>Set output file</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </widget>
+   <widget class="QWidget" name="verticalLayoutWidget_2">
+    <property name="geometry">
+     <rect>
+      <x>200</x>
+      <y>160</y>
+      <width>261</width>
+      <height>131</height>
+     </rect>
+    </property>
+    <layout class="QVBoxLayout" name="verticalLayout_2">
+     <item>
+      <widget class="QLineEdit" name="lineEdit">
+       <property name="minimumSize">
+        <size>
+         <width>0</width>
+         <height>26</height>
+        </size>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">QLineEdit {
+	border: 1px solid rgb(179, 179, 179);
+	border-radius:10px
+}</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLineEdit" name="lineEdit_2">
+       <property name="minimumSize">
+        <size>
+         <width>0</width>
+         <height>26</height>
+        </size>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">QLineEdit {
+	border: 1px solid rgb(179, 179, 179);
+	border-radius:10px
+}</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </widget>
+   <widget class="QPushButton" name="solve_btn">
+    <property name="geometry">
+     <rect>
+      <x>350</x>
+      <y>320</y>
+      <width>113</width>
+      <height>26</height>
+     </rect>
+    </property>
+    <property name="minimumSize">
+     <size>
+      <width>0</width>
+      <height>26</height>
+     </size>
+    </property>
+    <property name="maximumSize">
+     <size>
+      <width>16777215</width>
+      <height>26</height>
+     </size>
+    </property>
+    <property name="styleSheet">
+     <string notr="true">QPushButton {
+	background-color: rgb(253, 128, 8);
+	color:rgb(243,247,254);
+	border: 0px solid;
+	border-radius: 12px;
+	font: 13pt &quot;Andale Mono&quot;;
+}
+
+QPushButton:hover {
+	background-color: rgb(254, 204, 102);
+	color: rgb(255, 255, 255);
+}</string>
+    </property>
+    <property name="text">
+     <string>Solve</string>
+    </property>
+   </widget>
+   <widget class="QCheckBox" name="logging_checkbox">
+    <property name="geometry">
+     <rect>
+      <x>30</x>
+      <y>320</y>
+      <width>87</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="styleSheet">
+     <string notr="true">font: 15pt &quot;Andale Mono&quot;;
+color:rgb(43,59,78);</string>
+    </property>
+    <property name="text">
+     <string>Logging</string>
+    </property>
+   </widget>
+  </widget>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>
