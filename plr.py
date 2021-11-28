@@ -196,11 +196,12 @@ def dual_simplex_method(*simplex_problem):
 
 
 def b_vector_variation(*simplex_problem, initial_conditions, initial_param_value=0, output, dimensionality,
-                       side='center'):
+                       side='center', include_logging=True):
     goal_function_vector, parametric_vector, simplex_table, simplexes, b_vector = simplex_problem
     left_border = -10000
     right_border = 10000
-    print_simplex_table(simplex_table, simplexes)
+    if include_logging:
+        print_simplex_table(simplex_table, simplexes)
     basis_matrix = []
     optimal_resolution = np.dot(simplex_table[1], simplex_table[2])
     for i in range(0, len(simplex_table) - 3):
@@ -240,12 +241,14 @@ def b_vector_variation(*simplex_problem, initial_conditions, initial_param_value
         b_vector = b_vector + right_border * np.array(parametric_vector[0:len(simplex_table[3])])
         simplex_table[2] = np.dot(reversed_basis_matrix, b_vector).tolist()
         solution_existence = dual_simplex_method(goal_function_vector, simplex_table, simplexes)
-        print_simplex_table(simplex_table, simplexes)
+        if include_logging:
+            print_simplex_table(simplex_table, simplexes)
         right_border += initial_param_value
         if solution_existence != -1:
             b_vector_variation(goal_function_vector, parametric_vector, simplex_table, simplexes, b_vector,
                                initial_conditions=initial_conditions, initial_param_value=right_border,
-                               output=output, dimensionality=dimensionality, side='right')
+                               output=output, dimensionality=dimensionality, side='right',
+                               include_logging=include_logging)
         else:
             print_parametric_solution([right_border, 'positive infinity'], file_name=output)
 
@@ -253,7 +256,8 @@ def b_vector_variation(*simplex_problem, initial_conditions, initial_param_value
         b_vector = b_vector + left_border * np.array(parametric_vector[0:len(simplex_table[3])])
         simplex_table[2] = np.dot(reversed_basis_matrix, b_vector).tolist()
         solution_existence = dual_simplex_method(goal_function_vector, simplex_table, simplexes)
-        print_simplex_table(simplex_table, simplexes)
+        if include_logging:
+            print_simplex_table(simplex_table, simplexes)
         left_border += initial_param_value
         if solution_existence != -1:
             b_vector_variation(goal_function_vector, parametric_vector, simplex_table, simplexes, b_vector,
@@ -263,10 +267,12 @@ def b_vector_variation(*simplex_problem, initial_conditions, initial_param_value
             print_parametric_solution(['negative infinity', left_border], file_name=output)
 
 
-def objective_function_variation(*simplex_problem, initial_param_value=0, output, dimensionality,side='center'):
+def objective_function_variation(*simplex_problem, initial_param_value=0, output,
+                                 dimensionality,side='center', include_logging=True):
     goal_function_vector, parametric_vector, simplex_table, simplexes = simplex_problem
     solution_existence = simplex_method(goal_function_vector, simplex_table, simplexes)
-    print_simplex_table(simplex_table, simplexes)
+    if include_logging:
+        print_simplex_table(simplex_table, simplexes)
     optimal_resolution = np.dot(simplex_table[1], simplex_table[2])
     if solution_existence == -1:
         print_parametric_solution([initial_param_value, 'positive infinity'], file_name=output)
@@ -318,17 +324,19 @@ def objective_function_variation(*simplex_problem, initial_param_value=0, output
         objective_function_variation(goal_function_vector, parametric_vector, simplex_table, simplexes,
                                      initial_param_value=right_border, output=output,
                                      dimensionality=dimensionality,
-                                     side='right')
+                                     side='right',
+                                     include_logging=include_logging)
     if left_border != -1000 and side != 'right':
         left_border += initial_param_value
         objective_function_variation(goal_function_vector, parametric_vector, simplex_table, simplexes,
                                      initial_param_value=left_border,
                                      output=output,
                                      dimensionality=dimensionality,
-                                     side='left')
+                                     side='left',
+                                     include_logging=include_logging)
 
 
-def parametric_programming(input_file_name, output_file_name):
+def parametric_programming(input_file_name, output_file_name, include_logging=True):
     try:
         parse_data = parse_simplex_table_xml(input_file_name)
         task_type = parse_data['task_type']
@@ -341,7 +349,8 @@ def parametric_programming(input_file_name, output_file_name):
                                          parse_data['simplexes'],
                                          initial_param_value=0,
                                          output=output_file_name,
-                                         dimensionality=parse_data['dimensionality'])
+                                         dimensionality=parse_data['dimensionality'],
+                                         include_logging=include_logging)
         else:
             initial_cond = copy.deepcopy(parse_data['simplex_table'][3:len(parse_data['simplex_table'])])
             initial_b_vector = copy.deepcopy(parse_data['b_vector'])
@@ -354,7 +363,8 @@ def parametric_programming(input_file_name, output_file_name):
                                initial_conditions=initial_cond,
                                initial_param_value=0,
                                output=output_file_name,
-                               dimensionality=parse_data['dimensionality'])
+                               dimensionality=parse_data['dimensionality'],
+                               include_logging=include_logging)
     except ValueError as e:
         print(e)
         return
