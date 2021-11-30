@@ -131,7 +131,7 @@ def parse_simplex_table_xml(file_name):
             'simplexes': simplexes, 'b_vector': b_vector, 'dimensionality': dimensionality}
 
 
-def simplex_method(*simplex_problem):
+def simplex_method(*simplex_problem, output='log_simplex_table.txt', include_logging=False):
     goal_function_vector, simplex_table, simplexes = simplex_problem
     min_ratio = 10000
     min_simplex = 10000
@@ -162,11 +162,13 @@ def simplex_method(*simplex_problem):
     simplexes.clear()
     for i in range(3, len(simplex_table)):
         simplexes.append(np.dot(simplex_table[1], simplex_table[i]) - goal_function_vector[i - 3])
+    if include_logging:
+        print_simplex_table(simplex_table, simplexes, logger_file=output)
     if min(simplexes) < 0:
-        simplex_method(*simplex_problem)
+        simplex_method(*simplex_problem, output=output, include_logging=include_logging)
 
 
-def dual_simplex_method(*simplex_problem):
+def dual_simplex_method(*simplex_problem, output='log_simplex_table.txt', include_logging=False):
     goal_function_vector, simplex_table, simplexes = simplex_problem
     old_basis_index = simplex_table[2].index((min(simplex_table[2]))) + 1
     min_ratio = 1000
@@ -191,8 +193,14 @@ def dual_simplex_method(*simplex_problem):
     simplexes.clear()
     for i in range(3, len(simplex_table)):
         simplexes.append(np.dot(simplex_table[1], simplex_table[i]) - goal_function_vector[i - 3])
+    if include_logging:
+        print_simplex_table(simplex_table, simplexes, logger_file=output)
     if min(simplex_table[2]) < 0:
-        dual_simplex_method(*simplex_problem)
+        dual_simplex_method(*simplex_problem, output=output, include_logging=include_logging)
+
+
+def dinkelbach_method():
+    pass
 
 
 def b_vector_variation(*simplex_problem, initial_conditions, initial_param_value=0, output, dimensionality,
@@ -200,8 +208,6 @@ def b_vector_variation(*simplex_problem, initial_conditions, initial_param_value
     goal_function_vector, parametric_vector, simplex_table, simplexes, b_vector = simplex_problem
     left_border = -10000
     right_border = 10000
-    if include_logging:
-        print_simplex_table(simplex_table, simplexes)
     basis_matrix = []
     optimal_resolution = np.dot(simplex_table[1], simplex_table[2])
     for i in range(0, len(simplex_table) - 3):
@@ -240,9 +246,8 @@ def b_vector_variation(*simplex_problem, initial_conditions, initial_param_value
     if right_border != 1000 and side != 'left':
         b_vector = b_vector + right_border * np.array(parametric_vector[0:len(simplex_table[3])])
         simplex_table[2] = np.dot(reversed_basis_matrix, b_vector).tolist()
-        solution_existence = dual_simplex_method(goal_function_vector, simplex_table, simplexes)
-        if include_logging:
-            print_simplex_table(simplex_table, simplexes)
+        solution_existence = dual_simplex_method(goal_function_vector, simplex_table, simplexes,
+                                                 include_logging=include_logging)
         right_border += initial_param_value
         if solution_existence != -1:
             b_vector_variation(goal_function_vector, parametric_vector, simplex_table, simplexes, b_vector,
@@ -255,9 +260,8 @@ def b_vector_variation(*simplex_problem, initial_conditions, initial_param_value
     if left_border != -1000 and side != 'right':
         b_vector = b_vector + left_border * np.array(parametric_vector[0:len(simplex_table[3])])
         simplex_table[2] = np.dot(reversed_basis_matrix, b_vector).tolist()
-        solution_existence = dual_simplex_method(goal_function_vector, simplex_table, simplexes)
-        if include_logging:
-            print_simplex_table(simplex_table, simplexes)
+        solution_existence = dual_simplex_method(goal_function_vector, simplex_table, simplexes,
+                                                 include_logging=include_logging)
         left_border += initial_param_value
         if solution_existence != -1:
             b_vector_variation(goal_function_vector, parametric_vector, simplex_table, simplexes, b_vector,
@@ -268,11 +272,10 @@ def b_vector_variation(*simplex_problem, initial_conditions, initial_param_value
 
 
 def objective_function_variation(*simplex_problem, initial_param_value=0, output,
-                                 dimensionality,side='center', include_logging=True):
+                                 dimensionality, side='center', include_logging=True):
     goal_function_vector, parametric_vector, simplex_table, simplexes = simplex_problem
-    solution_existence = simplex_method(goal_function_vector, simplex_table, simplexes)
-    if include_logging:
-        print_simplex_table(simplex_table, simplexes)
+    solution_existence = simplex_method(goal_function_vector, simplex_table,
+                                        simplexes, include_logging=include_logging)
     optimal_resolution = np.dot(simplex_table[1], simplex_table[2])
     if solution_existence == -1:
         print_parametric_solution([initial_param_value, 'positive infinity'], file_name=output)
@@ -336,35 +339,76 @@ def objective_function_variation(*simplex_problem, initial_param_value=0, output
                                      include_logging=include_logging)
 
 
+def linear_programming(input_file_name, output_file_name):
+    try:
+        parsed_data = parse_simplex_table_xml(input_file_name)
+        task_type = parsed_data['task_type']
+        match task_type:
+            case 'simplex method':
+                print_simplex_table(parsed_data['simplex_table'], parsed_data['simplexes'], logger_file=output_file_name)
+                simplex_method(parsed_data['goal_function_vector'],
+                               parsed_data['simplex_table'],
+                               parsed_data['simplexes'],
+                               output=output_file_name,
+                               include_logging=True)
+            case 'dual simplex method':
+                print_simplex_table(parsed_data['simplex_table'], parsed_data['simplexes'], logger_file=output_file_name)
+                dual_simplex_method(parsed_data['goal_function_vector'],
+                                    parsed_data['simplex_table'],
+                                    parsed_data['simplexes'],
+                                    output=output_file_name,
+                                    include_logging=True)
+            case _:
+                raise ValueError('Wrong task type')
+    except ValueError as e:
+        print(e)
+        return
+
+
+def linear_fractional_programming(input_file_name, output_file_name, include_logging=True):
+    try:
+        parsed_data = parse_simplex_table_xml(input_file_name)
+        task_type = parsed_data['task_type']
+        match task_type:
+            case 'dinkelbach_method':
+                pass
+            case _:
+                raise ValueError('Wrong task type')
+    except ValueError as e:
+        print(e)
+        return
+
+
 def parametric_programming(input_file_name, output_file_name, include_logging=True):
     try:
-        parse_data = parse_simplex_table_xml(input_file_name)
-        task_type = parse_data['task_type']
-        if task_type not in ['c variation', 'b variation']:
-            raise ValueError('Wrong task type')
-        elif task_type == 'c variation':
-            objective_function_variation(parse_data['goal_function_vector'],
-                                         parse_data['parametric_vector'],
-                                         parse_data['simplex_table'],
-                                         parse_data['simplexes'],
-                                         initial_param_value=0,
-                                         output=output_file_name,
-                                         dimensionality=parse_data['dimensionality'],
-                                         include_logging=include_logging)
-        else:
-            initial_cond = copy.deepcopy(parse_data['simplex_table'][3:len(parse_data['simplex_table'])])
-            initial_b_vector = copy.deepcopy(parse_data['b_vector'])
-            simplex_method(parse_data['goal_function_vector'], parse_data['simplex_table'], parse_data['simplexes'])
-            b_vector_variation(parse_data['goal_function_vector'],
-                               parse_data['parametric_vector'],
-                               parse_data['simplex_table'],
-                               parse_data['simplexes'],
-                               initial_b_vector,
-                               initial_conditions=initial_cond,
-                               initial_param_value=0,
-                               output=output_file_name,
-                               dimensionality=parse_data['dimensionality'],
-                               include_logging=include_logging)
+        parsed_data = parse_simplex_table_xml(input_file_name)
+        task_type = parsed_data['task_type']
+        match task_type:
+            case 'c variation':
+                objective_function_variation(parsed_data['goal_function_vector'],
+                                             parsed_data['parametric_vector'],
+                                             parsed_data['simplex_table'],
+                                             parsed_data['simplexes'],
+                                             initial_param_value=0,
+                                             output=output_file_name,
+                                             dimensionality=parsed_data['dimensionality'],
+                                             include_logging=include_logging)
+            case 'b variation':
+                initial_cond = copy.deepcopy(parsed_data['simplex_table'][3:len(parsed_data['simplex_table'])])
+                initial_b_vector = copy.deepcopy(parsed_data['b_vector'])
+                simplex_method(parsed_data['goal_function_vector'], parsed_data['simplex_table'], parsed_data['simplexes'])
+                b_vector_variation(parsed_data['goal_function_vector'],
+                                   parsed_data['parametric_vector'],
+                                   parsed_data['simplex_table'],
+                                   parsed_data['simplexes'],
+                                   initial_b_vector,
+                                   initial_conditions=initial_cond,
+                                   initial_param_value=0,
+                                   output=output_file_name,
+                                   dimensionality=parsed_data['dimensionality'],
+                                   include_logging=include_logging)
+            case _:
+                raise ValueError('Wrong task type')
     except ValueError as e:
         print(e)
         return

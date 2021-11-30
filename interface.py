@@ -1,7 +1,7 @@
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtWidgets import QFileDialog
 
-from plr import parametric_programming
+from plr import parametric_programming, linear_programming
 
 
 class Ui_MainWindow(object):
@@ -83,9 +83,9 @@ class Ui_MainWindow(object):
         self.output_file_name.setObjectName("lineEdit_2")
         self.verticalLayout_2.addWidget(self.output_file_name)
         self.solve_btn = QtWidgets.QPushButton(self.centralwidget)
-        self.solve_btn.setGeometry(QtCore.QRect(350, 320, 113, 26))
+        self.solve_btn.setGeometry(QtCore.QRect(412, 320, 113, 26))
         self.solve_btn.setMinimumSize(QtCore.QSize(0, 26))
-        self.solve_btn.setMaximumSize(QtCore.QSize(16777215, 26))
+        self.solve_btn.setMaximumSize(QtCore.QSize(50, 26))
         self.solve_btn.setStyleSheet("QPushButton {\n"
                                      "    background-color: rgb(253, 128, 8);\n"
                                      "    color:rgb(243,247,254);\n"
@@ -101,11 +101,34 @@ class Ui_MainWindow(object):
         self.solve_btn.setObjectName("solve_btn")
         self.solve_btn.setText("Solve")
         self.logging_checkbox = QtWidgets.QCheckBox(self.centralwidget)
-        self.logging_checkbox.setGeometry(QtCore.QRect(30, 320, 87, 20))
+        self.logging_checkbox.setGeometry(QtCore.QRect(70, 350, 87, 20))
         self.logging_checkbox.setStyleSheet("font: 15pt \"Andale Mono\";\n"
                                             "color:rgb(43,59,78);")
         self.logging_checkbox.setObjectName("logging_checkbox")
         self.logging_checkbox.setText("Logging")
+        self.task_cb = QtWidgets.QComboBox(self.centralwidget)
+        self.task_cb.setGeometry(QtCore.QRect(200, 320, 141, 26))
+        self.task_cb.setMinimumSize(QtCore.QSize(200, 26))
+        self.task_cb.setMaximumSize(QtCore.QSize(400, 26))
+        self.task_cb.setStyleSheet("QComboBox {\n"
+                                   "    border: 1px solid rgb(179, 179, 179);\n"
+                                   "    border-radius: 5px;\n"
+                                   "    font: 13pt \"Andale Mono\";\n"
+                                   "    color:rgb(43,59,78);\n"
+                                   "}\n"
+                                   "\n"
+                                   "QComboBox::drop-down \n"
+                                   "{\n"
+                                   "    border: 0px;\n"
+                                   "}")
+        self.task_cb.setObjectName("task_cb")
+        self.task_cb.addItems(['linear programming', 'parametric programming', 'linear fractional programming'])
+        self.label_2 = QtWidgets.QLabel(self.centralwidget)
+        self.label_2.setGeometry(QtCore.QRect(69, 320, 91, 20))
+        self.label_2.setStyleSheet("font: 15pt \"Andale Mono\";\n"
+                                   "color:rgb(43,59,78);")
+        self.label_2.setObjectName("label_2")
+        self.label_2.setText("Task type:")
         MainWindow.setCentralWidget(self.centralwidget)
 
         self.input_file_btn.clicked.connect(self.set_input_file)
@@ -121,8 +144,16 @@ class Ui_MainWindow(object):
         self.output_file_name.setText(file_name[0])
 
     def solve(self):
-        parametric_programming(input_file_name=self.input_file_name.text(),
-                               output_file_name=self.output_file_name.text(),
-                               include_logging=self.logging_checkbox.isChecked())
+        match self.task_cb.currentText():
+            case 'parametric programming':
+                parametric_programming(input_file_name=self.input_file_name.text(),
+                                       output_file_name=self.output_file_name.text(),
+                                       include_logging=self.logging_checkbox.isChecked())
+            case 'linear programming':
+                linear_programming(input_file_name=self.input_file_name.text(),
+                                   output_file_name=self.output_file_name.text())
+            case 'linear fractional programming':
+                linear_programming(input_file_name=self.input_file_name.text(),
+                                   output_file_name=self.output_file_name.text())
         self.input_file_name.setText("")
         self.output_file_name.setText("")
