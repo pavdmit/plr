@@ -76,6 +76,44 @@ def print_parametric_solution(argument_range, basis_indexes=None, solution_vecto
         f.write('*t\n\n')
 
 
+def parse_fractional_problem(file_name):
+    condition_vectors = []
+    try:
+        if not os.path.exists(file_name):
+            print(file_name)
+            raise FileNotFoundError("File doesn't exist")
+        tree = ET.parse(file_name)
+        initial_data = tree.getroot()
+        task_type = initial_data.find('TaskType')
+        dimensionality = initial_data.find('Dimensionality')
+        numerator_vector = initial_data.find('NumeratorVector')
+        denominator_vector = initial_data.find('DenominatorVector')
+        b_vector = initial_data.find('BVector')
+        if dimensionality or numerator_vector or denominator_vector or b_vector or task_type is None:
+            raise AttributeError('Wrong file structure')
+        numerator_vector = list(map(Fraction, numerator_vector.text.split()))
+        denominator_vector = list(map(Fraction, denominator_vector.text.split()))
+        b_vector = list(map(Fraction, b_vector.text.split()))
+        dimensionality = list(map(int, dimensionality.text.split()))
+        dimensionality = {'number of constraints': dimensionality[0], 'number of variables': dimensionality[1]}
+        task_type = task_type.text
+        for i in range(0, dimensionality['number of variables']):
+            condition_vectors = initial_data.find('X{}'.format(i + 1))
+            if condition_vectors is not None:
+                condition_vectors.append(list(map(Fraction, condition_vectors.text.split())))
+            else:
+                raise AttributeError('Wrong file structure')
+    except AttributeError as e:
+        print(e)
+        sys.exit(1)
+    except FileNotFoundError as e:
+        print(e)
+        sys.exit(1)
+    return {'task_type': task_type, 'numerator_vector': numerator_vector,
+            'denominator_vector': denominator_vector, 'condition_vectors': condition_vectors,
+            'b_vector': b_vector, 'dimensionality': dimensionality}
+
+
 def parse_simplex_table_xml(file_name):
     simplex_table = []
     simplexes = []
@@ -199,8 +237,14 @@ def dual_simplex_method(*simplex_problem, output='log_simplex_table.txt', includ
         dual_simplex_method(*simplex_problem, output=output, include_logging=include_logging)
 
 
-def dinkelbach_method():
-    pass
+def dinkelbach_method(*fractional_simplex_method, output, include_logging=False):
+    print("OKKK")
+    numerator_vector, denominator_vector, condition_vectors, b_vector, dimensionality = fractional_simplex_method
+    print(numerator_vector)
+    print(denominator_vector)
+    print(condition_vectors)
+    print(b_vector)
+    print(dimensionality)
 
 
 def b_vector_variation(*simplex_problem, initial_conditions, initial_param_value=0, output, dimensionality,
@@ -345,14 +389,16 @@ def linear_programming(input_file_name, output_file_name):
         task_type = parsed_data['task_type']
         match task_type:
             case 'simplex method':
-                print_simplex_table(parsed_data['simplex_table'], parsed_data['simplexes'], logger_file=output_file_name)
+                print_simplex_table(parsed_data['simplex_table'], parsed_data['simplexes'],
+                                    logger_file=output_file_name)
                 simplex_method(parsed_data['goal_function_vector'],
                                parsed_data['simplex_table'],
                                parsed_data['simplexes'],
                                output=output_file_name,
                                include_logging=True)
             case 'dual simplex method':
-                print_simplex_table(parsed_data['simplex_table'], parsed_data['simplexes'], logger_file=output_file_name)
+                print_simplex_table(parsed_data['simplex_table'], parsed_data['simplexes'],
+                                    logger_file=output_file_name)
                 dual_simplex_method(parsed_data['goal_function_vector'],
                                     parsed_data['simplex_table'],
                                     parsed_data['simplexes'],
@@ -371,7 +417,13 @@ def linear_fractional_programming(input_file_name, output_file_name, include_log
         task_type = parsed_data['task_type']
         match task_type:
             case 'dinkelbach_method':
-                pass
+                dinkelbach_method(parsed_data['numerator_vector'],
+                                  parsed_data['denominator_vector'],
+                                  parsed_data['condition_vectors'],
+                                  parsed_data['b_vector'],
+                                  parsed_data['dimensionality'],
+                                  output=output_file_name,
+                                  include_logging=include_logging)
             case _:
                 raise ValueError('Wrong task type')
     except ValueError as e:
@@ -396,7 +448,8 @@ def parametric_programming(input_file_name, output_file_name, include_logging=Tr
             case 'b variation':
                 initial_cond = copy.deepcopy(parsed_data['simplex_table'][3:len(parsed_data['simplex_table'])])
                 initial_b_vector = copy.deepcopy(parsed_data['b_vector'])
-                simplex_method(parsed_data['goal_function_vector'], parsed_data['simplex_table'], parsed_data['simplexes'])
+                simplex_method(parsed_data['goal_function_vector'], parsed_data['simplex_table'],
+                               parsed_data['simplexes'])
                 b_vector_variation(parsed_data['goal_function_vector'],
                                    parsed_data['parametric_vector'],
                                    parsed_data['simplex_table'],
