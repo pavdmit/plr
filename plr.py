@@ -77,7 +77,6 @@ def print_parametric_solution(argument_range, basis_indexes=None, solution_vecto
 
 
 def parse_fractional_problem(file_name):
-    condition_vectors = []
     try:
         if not os.path.exists(file_name):
             print(file_name)
@@ -97,10 +96,11 @@ def parse_fractional_problem(file_name):
         dimensionality = list(map(int, dimensionality.text.split()))
         dimensionality = {'number of constraints': dimensionality[0], 'number of variables': dimensionality[1]}
         task_type = task_type.text
+        condition_vectors = []
         for i in range(0, dimensionality['number of variables']):
-            condition_vectors = initial_data.find('X{}'.format(i + 1))
-            if condition_vectors is not None:
-                condition_vectors.append(list(map(Fraction, condition_vectors.text.split())))
+            condition_vector = initial_data.find('X{}'.format(i + 1))
+            if condition_vector is not None:
+                condition_vectors.append(list(map(Fraction, condition_vector.text.split())))
             else:
                 raise AttributeError('Wrong file structure')
     except AttributeError as e:
@@ -238,13 +238,58 @@ def dual_simplex_method(*simplex_problem, output='log_simplex_table.txt', includ
 
 
 def dinkelbach_method(*fractional_simplex_method, output, include_logging=False):
-    print("OKKK")
     numerator_vector, denominator_vector, condition_vectors, b_vector, dimensionality = fractional_simplex_method
     print(numerator_vector)
     print(denominator_vector)
     print(condition_vectors)
     print(b_vector)
     print(dimensionality)
+    optimal_solution = [Fraction("0/1") for _ in range(dimensionality['number of variables'])]
+    optimal_solution.append(Fraction("1/1"))
+    while True:
+        lam = np.dot(numerator_vector, optimal_solution) / np.dot(denominator_vector, optimal_solution)
+        print("lam: ", lam)
+        goal_func_vector = numerator_vector - np.dot(lam, denominator_vector)
+        goal_func_vector = goal_func_vector[:-1]
+        print("goal_func_vector: ", goal_func_vector)
+        simplex_table = []
+        simplexes = []
+        basis_indexes = [i for i in range(dimensionality['number of variables'] + 1,
+                                          dimensionality['number of constraints'] + dimensionality[
+                                              'number of variables'] + 1)]
+        basis_goal_function = [Fraction("0/1") for _ in range(len(basis_indexes))]
+        simplex_table.append(basis_indexes)
+        simplex_table.append(basis_goal_function)
+        simplex_table.append(copy.deepcopy(b_vector))
+        for i in range(0, dimensionality['number of variables']):
+            simplex_table.append(copy.deepcopy(condition_vectors[i]))
+        identity_matrix = np.eye(len(basis_indexes))
+        for i in range(len(basis_indexes)):
+            column = map(Fraction, identity_matrix[i])
+            column_to_list = list(column)
+            simplex_table.append(column_to_list)
+        goal_func_vector = np.concatenate((goal_func_vector, basis_goal_function))
+        # goal_func_vector += basis_goal_function
+        # print("basis_goal_function: ", basis_goal_function)
+        print("changed: ", goal_func_vector)
+        for i in range(3, len(simplex_table)):
+            simplexes.append(np.dot(basis_goal_function, simplex_table[i]) - goal_func_vector[i - 3])
+        print_simplex_table(simplex_table, simplexes, logger_file='log_simplex_table2.txt')
+        simplex_method(goal_func_vector,
+                       simplex_table,
+                       simplexes,
+                       output=output,
+                       include_logging=True)
+        optimal_solution = [Fraction("0/1") for _ in range(dimensionality['number of variables'])]
+        optimal_solution.append(Fraction("1/1"))
+        for j in range(0, dimensionality['number of variables']):
+            if basis_indexes[j] <= dimensionality['number of variables']:
+                optimal_solution[simplex_table[0][j]-1] = simplex_table[2][j]
+        print("new optimal: ", optimal_solution)
+        print("--------------------------------")
+        goal_func_vector = numerator_vector - np.dot(lam, denominator_vector)
+        if np.dot(goal_func_vector,optimal_solution)==0:
+            break
 
 
 def b_vector_variation(*simplex_problem, initial_conditions, initial_param_value=0, output, dimensionality,
@@ -413,10 +458,10 @@ def linear_programming(input_file_name, output_file_name):
 
 def linear_fractional_programming(input_file_name, output_file_name, include_logging=True):
     try:
-        parsed_data = parse_simplex_table_xml(input_file_name)
+        parsed_data = parse_fractional_problem(input_file_name)
         task_type = parsed_data['task_type']
         match task_type:
-            case 'dinkelbach_method':
+            case 'dinkelbach method':
                 dinkelbach_method(parsed_data['numerator_vector'],
                                   parsed_data['denominator_vector'],
                                   parsed_data['condition_vectors'],

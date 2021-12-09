@@ -149,13 +149,15 @@ class Ui_MainWindow(object):
                 parametric_programming(input_file_name=self.input_file_name.text(),
                                        output_file_name=self.output_file_name.text(),
                                        include_logging=self.logging_checkbox.isChecked())
-            case 'linear programming':
-                linear_programming(input_file_name=self.input_file_name.text(),
-                                   output_file_name=self.output_file_name.text())
             case 'linear fractional programming':
-                print("There")
                 linear_fractional_programming(input_file_name=self.input_file_name.text(),
                                               output_file_name=self.output_file_name.text(),
                                               include_logging=self.logging_checkbox.isChecked())
+            case 'linear programming':
+                linear_programming(input_file_name=self.input_file_name.text(),
+                                   output_file_name=self.output_file_name.text())
+            case _:
+                pass
+
         self.input_file_name.setText("")
         self.output_file_name.setText("")
