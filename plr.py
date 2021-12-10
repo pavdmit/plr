@@ -239,19 +239,13 @@ def dual_simplex_method(*simplex_problem, output='log_simplex_table.txt', includ
 
 def dinkelbach_method(*fractional_simplex_method, output, include_logging=False):
     numerator_vector, denominator_vector, condition_vectors, b_vector, dimensionality = fractional_simplex_method
-    print(numerator_vector)
-    print(denominator_vector)
-    print(condition_vectors)
-    print(b_vector)
-    print(dimensionality)
     optimal_solution = [Fraction("0/1") for _ in range(dimensionality['number of variables'])]
     optimal_solution.append(Fraction("1/1"))
+    step = 1
     while True:
         lam = np.dot(numerator_vector, optimal_solution) / np.dot(denominator_vector, optimal_solution)
-        print("lam: ", lam)
         goal_func_vector = numerator_vector - np.dot(lam, denominator_vector)
         goal_func_vector = goal_func_vector[:-1]
-        print("goal_func_vector: ", goal_func_vector)
         simplex_table = []
         simplexes = []
         basis_indexes = [i for i in range(dimensionality['number of variables'] + 1,
@@ -269,27 +263,42 @@ def dinkelbach_method(*fractional_simplex_method, output, include_logging=False)
             column_to_list = list(column)
             simplex_table.append(column_to_list)
         goal_func_vector = np.concatenate((goal_func_vector, basis_goal_function))
-        # goal_func_vector += basis_goal_function
-        # print("basis_goal_function: ", basis_goal_function)
-        print("changed: ", goal_func_vector)
         for i in range(3, len(simplex_table)):
             simplexes.append(np.dot(basis_goal_function, simplex_table[i]) - goal_func_vector[i - 3])
-        print_simplex_table(simplex_table, simplexes, logger_file='log_simplex_table2.txt')
         simplex_method(goal_func_vector,
                        simplex_table,
                        simplexes,
-                       output=output,
-                       include_logging=True)
+                       output='log_simplex_table.txt',
+                       include_logging=include_logging)
         optimal_solution = [Fraction("0/1") for _ in range(dimensionality['number of variables'])]
         optimal_solution.append(Fraction("1/1"))
         for j in range(0, dimensionality['number of variables']):
             if basis_indexes[j] <= dimensionality['number of variables']:
-                optimal_solution[simplex_table[0][j]-1] = simplex_table[2][j]
-        print("new optimal: ", optimal_solution)
-        print("--------------------------------")
+                optimal_solution[simplex_table[0][j] - 1] = simplex_table[2][j]
         goal_func_vector = numerator_vector - np.dot(lam, denominator_vector)
-        if np.dot(goal_func_vector,optimal_solution)==0:
+        print_dinkelbach_solution(step, lam, goal_func_vector, optimal_solution, output)
+        step += 1
+        if np.dot(goal_func_vector, optimal_solution) == 0:
             break
+
+
+def print_dinkelbach_solution(step, lamb, goal_func_vector, optimal_solution, output):
+    with open(output, 'a') as f:
+        f.write('Step: {}, Lambda: {}'.format(step, lamb))
+        f.write('\n')
+        f.write('Optimal solution: (')
+        for i in range(0, len(optimal_solution)-1):
+            f.write(str(optimal_solution[i]))
+            if i != len(optimal_solution)-2:
+                f.write(',')
+        f.write(')')
+        f.write('\n')
+        f.write('F(lambda): {}'.format(np.dot(goal_func_vector, optimal_solution)))
+        f.write('\n')
+        if np.dot(goal_func_vector, optimal_solution) == 0:
+            f.write('Stop criterion occurred!')
+        f.write('\n')
+        f.write('\n')
 
 
 def b_vector_variation(*simplex_problem, initial_conditions, initial_param_value=0, output, dimensionality,
