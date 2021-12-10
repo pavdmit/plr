@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+<InitialData>
+    <TaskType>dual simplex method</TaskType>
+    <Dimensionality>2 2</Dimensionality>
+    <GoalFunctionVector>-1 -1</GoalFunctionVector>
+    <ParametricVector>-3 -4</ParametricVector>
+    <X1>-2 -1</X1>
+    <X2>-1 -4</X2>
+    <BVector>-3 -5</BVector>
+</InitialData>
+
