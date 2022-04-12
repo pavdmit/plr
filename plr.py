@@ -282,14 +282,18 @@ def dinkelbach_method(*fractional_simplex_method, output, include_logging=False)
             break
 
 
+def fractional_simplex_method(*fractional_simplex_method, output, include_logging=False):
+    pass
+
+
 def print_dinkelbach_solution(step, lamb, goal_func_vector, optimal_solution, output):
     with open(output, 'a') as f:
         f.write('Step: {}, Lambda: {}'.format(step, lamb))
         f.write('\n')
         f.write('Optimal solution: (')
-        for i in range(0, len(optimal_solution)-1):
+        for i in range(0, len(optimal_solution) - 1):
             f.write(str(optimal_solution[i]))
-            if i != len(optimal_solution)-2:
+            if i != len(optimal_solution) - 2:
                 f.write(',')
         f.write(')')
         f.write('\n')
@@ -478,6 +482,14 @@ def linear_fractional_programming(input_file_name, output_file_name, include_log
                                   parsed_data['dimensionality'],
                                   output=output_file_name,
                                   include_logging=include_logging)
+            case 'fractional simplex':
+                fractional_simplex_method(parsed_data['numerator_vector'],
+                                          parsed_data['denominator_vector'],
+                                          parsed_data['condition_vectors'],
+                                          parsed_data['b_vector'],
+                                          parsed_data['dimensionality'],
+                                          output=output_file_name,
+                                          include_logging=include_logging)
             case _:
                 raise ValueError('Wrong task type')
     except ValueError as e:
