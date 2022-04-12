@@ -65,3 +65,5 @@ print(data['simplex_table'])
 
 print("simplexes: ")
 print(data['simplexes'])
+
+print_simplex_table(data['simplex_table'],data['simplexes'], fractional=True)

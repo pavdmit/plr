@@ -27,28 +27,53 @@ def reverse_matrix(fraction_matrix):
     return np.transpose(reversed_fraction_matrix)
 
 
-def print_simplex_table(simplex_table, simplexes, logger_file='log_simplex_table.txt'):
+def print_simplex_table(simplex_table, simplexes, fractional=False, logger_file='log_simplex_table.txt'):
     with open(logger_file, 'a') as f:
         f.write('Basis indexes: ')
         for index in simplex_table[0]:
             f.write(str(index) + ' ')
-        f.write('\n')
-        f.write('C basis: ')
-        for index in simplex_table[1]:
-            f.write(str(index) + ' ')
-        f.write('\n')
-        f.write('Optimal resolution vector: ')
-        for component in simplex_table[2]:
-            f.write(str(component) + ' ')
-        f.write('\n')
-        for i in range(3, len(simplex_table)):
-            f.write('A{}'.format(i - 2) + ': ')
-            for component in simplex_table[i]:
+        if fractional:
+            f.write('\nNumerator basis: ')
+            for index in simplex_table[1]:
+                f.write(str(index) + ' ')
+            f.write('\nDenominator basis: ')
+            for index in simplex_table[2]:
+                f.write(str(index) + ' ')
+            f.write('\nOptimal resolution vector: ')
+            for component in simplex_table[3]:
                 f.write(str(component) + ' ')
             f.write('\n')
-        f.write('Simplexes: ', )
-        for component in simplexes:
-            f.write(str(component) + ' ')
+            for i in range(4, len(simplex_table)):
+                f.write('A{}'.format(i - 3) + ': ')
+                for component in simplex_table[i]:
+                    f.write(str(component) + ' ')
+                f.write('\n')
+            f.write('Numerator simplexes: ', )
+            for component in simplexes['numerator_simplexes']:
+                f.write(str(component) + ' ')
+            f.write('\nDenominator simplexes: ', )
+            for component in simplexes['denominator_simplexes']:
+                f.write(str(component) + ' ')
+            f.write('\nRatio simplexes: ', )
+            for component in simplexes['ratio']:
+                f.write(str(component) + ' ')
+            f.write('\n')
+        else:
+            f.write('\nC basis: ')
+            for index in simplex_table[1]:
+                f.write(str(index) + ' ')
+            f.write('\nOptimal resolution vector: ')
+            for component in simplex_table[2]:
+                f.write(str(component) + ' ')
+            f.write('\n')
+            for i in range(3, len(simplex_table)):
+                f.write('A{}'.format(i - 2) + ': ')
+                for component in simplex_table[i]:
+                    f.write(str(component) + ' ')
+                f.write('\n')
+            f.write('Simplexes: ', )
+            for component in simplexes:
+                f.write(str(component) + ' ')
         f.write('\n         \n')
 
 
