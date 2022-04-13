@@ -397,6 +397,22 @@ def fractional_simplex_method(numerator_vector, denominator_vector, simplex_tabl
                                   simplex_table, simplexes,
                                   dimensionality,
                                   output=output)
+    else:
+        optimal_solution = [Fraction("0/1") for _ in range(dimensionality['number of variables'])]
+        for i in range(len(simplex_table[0])):
+            if simplex_table[0][i] <= dimensionality['number of variables']:
+                optimal_solution[i] = simplex_table[3][i]
+        with open(output, 'a') as f:
+            f.write('Optimal solution: (')
+            for i in range(dimensionality['number of variables']):
+                if i!=dimensionality['number of variables']-1:
+                    f.write('{},'.format(optimal_solution[i]))
+                else:
+                    f.write('{}'.format(optimal_solution[i]))
+            f.write(')\n')
+            f.write('Q(x): {}'.format(q_x))
+            f.write('\n')
+
 
 
 def print_dinkelbach_solution(step, lamb, goal_func_vector, optimal_solution, output):
@@ -603,12 +619,15 @@ def linear_fractional_programming(input_file_name, output_file_name, include_log
                                                parsed_data['dimensionality'])
                 print_simplex_table(data['simplex_table'], data['simplexes'],
                                     fractional=True, logger_file=output_file_name)
-                fractional_simplex_method(data['numerator_vector'],
+                no_solution = fractional_simplex_method(data['numerator_vector'],
                                           data['denominator_vector'],
                                           data['simplex_table'],
                                           data['simplexes'],
                                           data['dimensionality'],
                                           output=output_file_name)
+                if no_solution == -1:
+                    with open(output_file_name, 'a') as f:
+                        f.write('No solution!')
             case _:
                 raise ValueError('Wrong task type')
     except ValueError as e:
